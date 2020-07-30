@@ -85,3 +85,16 @@ for event in test['Event'].values:
                     ',' + employee_data['Name'][ind]
     event_list.append(event_dict)
     print('--------------------------------------------------------------------')
+
+workbook = xlsxwriter.Workbook('output.xlsx')
+worksheet = workbook.add_worksheet()
+
+Events = [x['Event'] for x in event_list]
+Employees = [x['Employees'] for x in event_list]
+
+worksheet.write(0, 0, 'Event')
+worksheet.write(0, 1, 'Employees')
+worksheet.write_column(1, 0, Events)
+worksheet.write_column(1, 1, Employees)
+
+workbook.close()
