@@ -48,3 +48,40 @@ tfidf_transformer = TfidfTransformer()
 X_train_tfidf = tfidf_transformer.fit_transform(X_train_counts)
 model = LinearSVC()
 model.fit(X_train_tfidf, y_train)
+
+cv = CountVectorizer()
+event_list = []
+for event in test['Event'].values:
+    event_dict = {}
+    i = 0
+    feature_list = []
+    cosine_sim_list = []
+    print((event))
+    input_feature = (model.predict(count_vect.transform([event.lower()]))[0])
+    for combined_feature in employee_data['Combined']:
+        feature_list.append(combined_feature)
+        feature_list.append(input_feature)
+        count_matrix = cv.fit_transform(feature_list)
+        cosine_sim = cosine_similarity(count_matrix)
+        cosine_sim_list.append([cosine_sim[0], i])
+        i += 1
+        feature_list = []
+
+    event_dict['Event'] = event
+    event_dict['Employees'] = ''
+    sorted_list = sorted(cosine_sim_list, key=lambda x: x[0][1], reverse=True)
+    min_score = 0.60
+    for x in sorted_list:
+        score = x[0][1]
+        ind = x[1]
+        if score < min_score:
+            break
+        else:
+            print(employee_data['Name'][ind])
+            if(len(event_dict['Employees']) < 1):
+                event_dict['Employees'] = employee_data['Name'][ind]
+            else:
+                event_dict['Employees'] = event_dict['Employees'] + \
+                    ',' + employee_data['Name'][ind]
+    event_list.append(event_dict)
+    print('--------------------------------------------------------------------')
