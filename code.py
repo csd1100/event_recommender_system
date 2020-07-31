@@ -7,22 +7,33 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.feature_extraction.text import TfidfTransformer
 from sklearn.model_selection import train_test_split
 from sklearn.svm import LinearSVC
-from sklearn.pipeline import Pipeline
-from sklearn.feature_selection import chi2
 
 
 def employee_data_combine_features(row):
     return row['Domain']+' '+row['Event1']+' '+row['Event2']
 
 
+def lower_events(row):
+    row = row['Event'].lower().lstrip()
+    return row
+
+
+def lstrip_types(row):
+    row = row['Type'].lstrip()
+    return row
+
+
 df = pd.read_csv('events.csv')
-df['Type'] = df['Type'].str.lstrip()
 
 employee_data = pd.read_csv('CCMLEmployeeData.csv')
 employee_data['Combined'] = employee_data.apply(
     employee_data_combine_features, axis=1)
 
-test = pd.read_csv('test.csv')
+test = pd.read_csv('input.csv')
+
+df['Event'] = df.apply(lower_events, axis=1).to_frame()[0]
+df['Type'] = df.apply(lstrip_types, axis=1).to_frame()[0]
+# test['Event'] = test.apply(lower_events, axis=1).to_frame()[0]
 
 tfidf = TfidfVectorizer(sublinear_tf=True, min_df=5, norm='l2',
                         encoding='latin-1', ngram_range=(1, 2), stop_words='english')
@@ -31,14 +42,6 @@ features = tfidf.fit_transform(df['Event']).toarray()
 labels = df['Type']
 
 event_dict = dict(df.values)
-
-N = 2
-for event, types in event_dict.items():
-    features_chi2 = chi2(features, labels == types)
-    indices = np.argsort(features_chi2[0])
-    feature_names = np.array(tfidf.get_feature_names())[indices]
-    unigrams = [v for v in feature_names if len(v.split(' ')) == 1]
-    bigrams = [v for v in feature_names if len(v.split(' ')) == 2]
 
 X_train, X_test, y_train, y_test = train_test_split(
     df['Event'], df['Type'], random_state=0)
@@ -58,6 +61,7 @@ for event in test['Event'].values:
     cosine_sim_list = []
     print((event))
     input_feature = (model.predict(count_vect.transform([event.lower()]))[0])
+    print(input_feature)
     for combined_feature in employee_data['Combined']:
         feature_list.append(combined_feature)
         feature_list.append(input_feature)
